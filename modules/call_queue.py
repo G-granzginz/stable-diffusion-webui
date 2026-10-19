@@ -87,8 +87,8 @@ def wrap_gradio_call_no_job(func, extra_outputs=None, add_stats=False):
 
             error_message = f'{type(e).__name__}: {e}'
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
-
-        devices.torch_gc()
+        finally:
+            devices.torch_gc()
 
         if not add_stats:
             return tuple(res)

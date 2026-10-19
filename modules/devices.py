@@ -1,4 +1,5 @@
 import sys
+import gc
 import contextlib
 from functools import lru_cache
 
@@ -75,6 +76,13 @@ def get_device_for(task):
 
 
 def torch_gc():
+    gc.collect()
+
+    try:
+        from modules import lowvram
+        lowvram.send_everything_to_cpu()
+    except Exception:
+        pass
 
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):

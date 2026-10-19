@@ -251,16 +251,19 @@ def split_cross_attention_forward(self, x, context=None, mask=None, **kwargs):
         steps = 1
 
         if mem_required > mem_free_total:
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()
+            mem_free_total = get_available_vram()
+
+        if mem_required > mem_free_total and mem_free_total > 0:
             steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
-            # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
-            #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
 
         if steps > 64:
-            max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
-            raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
-                               f'Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free')
-
-        slice_size = q.shape[1] // steps
+            steps = min(max(64, steps), q.shape[1])
+            slice_size = max(1, q.shape[1] // steps)
+        else:
+            slice_size = max(1, q.shape[1] // steps)
         for i in range(0, q.shape[1], slice_size):
             end = min(i + slice_size, q.shape[1])
             s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k)

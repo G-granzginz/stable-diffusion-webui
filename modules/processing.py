@@ -857,6 +857,8 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()
 
+        devices.torch_gc()
+
     return res
 
 
