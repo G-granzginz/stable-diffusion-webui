@@ -3,8 +3,16 @@ import gc
 import contextlib
 from functools import lru_cache
 
+import os
 import torch
 from modules import errors, shared, npu_specific
+
+try:
+    cpu_threads = os.cpu_count() or 8
+    if torch.get_num_threads() < cpu_threads:
+        torch.set_num_threads(cpu_threads)
+except Exception:
+    pass
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -85,9 +93,12 @@ def torch_gc():
         pass
 
     if torch.cuda.is_available():
-        with torch.cuda.device(get_cuda_device_string()):
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+        try:
+            with torch.cuda.device(get_cuda_device_string()):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
 
     if has_mps():
         mac_specific.torch_mps_gc()

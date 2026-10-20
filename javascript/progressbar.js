@@ -169,7 +169,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
             setTimeout(() => {
                 funProgress(id_task, res.id_live_preview);
-            }, opts.live_preview_refresh_period || 500);
+            }, opts.live_preview_refresh_period || 200);
         }, function() {
             removeProgressBar();
         });
@@ -200,7 +200,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
             setTimeout(() => {
                 funLivePreview(id_task, res.id_live_preview);
-            }, opts.live_preview_refresh_period || 500);
+            }, opts.live_preview_refresh_period || 200);
         }, function() {
             removeProgressBar();
         });

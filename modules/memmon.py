@@ -30,30 +30,46 @@ class MemUsageMonitor(threading.Thread):
             self.disabled = True
 
     def cuda_mem_get_info(self):
-        index = self.device.index if self.device.index is not None else torch.cuda.current_device()
-        return torch.cuda.mem_get_info(index)
+        try:
+            index = self.device.index if self.device.index is not None else torch.cuda.current_device()
+            return torch.cuda.mem_get_info(index)
+        except Exception:
+            return 0, 0
 
     def run(self):
         if self.disabled:
             return
 
         while True:
-            self.run_flag.wait()
+            try:
+                self.run_flag.wait()
 
-            torch.cuda.reset_peak_memory_stats()
-            self.data.clear()
+                try:
+                    torch.cuda.reset_peak_memory_stats()
+                except Exception:
+                    pass
+                self.data.clear()
 
-            if self.opts.memmon_poll_rate <= 0:
-                self.run_flag.clear()
-                continue
+                if self.opts.memmon_poll_rate <= 0:
+                    self.run_flag.clear()
+                    continue
 
-            self.data["min_free"] = self.cuda_mem_get_info()[0]
+                try:
+                    self.data["min_free"] = self.cuda_mem_get_info()[0]
+                except Exception:
+                    self.data["min_free"] = 0
 
-            while self.run_flag.is_set():
-                free, total = self.cuda_mem_get_info()
-                self.data["min_free"] = min(self.data["min_free"], free)
+                while self.run_flag.is_set():
+                    try:
+                        free, total = self.cuda_mem_get_info()
+                        self.data["min_free"] = min(self.data["min_free"], free)
+                    except Exception:
+                        pass
 
-                time.sleep(1 / self.opts.memmon_poll_rate)
+                    poll_rate = max(1, self.opts.memmon_poll_rate)
+                    time.sleep(1 / poll_rate)
+            except Exception:
+                time.sleep(1)
 
     def dump_debug(self):
         print(self, 'recorded data:')
