@@ -3,6 +3,10 @@ if exist "%~dp0..\clean_stuck_process.py" (
     call python "%~dp0..\clean_stuck_process.py" 2>nul
 )
 
+if exist "%~dp0..\launch_studio.bat" (
+    start "Sintaker Studio (Port 7861)" cmd /c "%~dp0..\launch_studio.bat"
+)
+
 set PYTHON=
 set GIT=
 set VENV_DIR=
